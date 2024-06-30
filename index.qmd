@@ -1,10 +1,21 @@
 ---
-title: "DONG Danping"
+title: "About Me"
 image: mypic.jpg
 about:
     template: jolla
     image-shape: round
     image-width: 15em
+    links:
+        - text: Email
+          icon: envelope
+          href: mailto:dpdong@smu.edu.sg
+        - text: GitHub
+          icon: github
+          href: https://github.com/dpdong19
+        - text: ORCID
+          icon: flower1
+          href: https://orcid.org/0000-0002-2229-6709
+          
 ---
 
-Danping is currently the Senior Research Services Librarian at Singapore Management University supporting scholarly communications, Research Data Management and institutional repositories. Recently her area of interest has been expanded into research tools, data analysis and computational research methods. 
+DONG Danping is currently the Senior Research Services Librarian at Singapore Management University supporting scholarly communications, Research Data Management and institutional repositories. Recently my area of interest has expanded into research tools, data analysis and computational research methods. 
