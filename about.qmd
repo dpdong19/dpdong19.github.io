@@ -1,9 +1,8 @@
 ---
-title: "About"
+title: "Publications & Presentations"
 ---
 
-About this site
+## Publications
 
-```{r}
-1 + 1
-```
+
+## Conferences & Conferences
