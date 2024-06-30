@@ -1,5 +1,10 @@
 ---
-title: "Danping's Homepage"
+title: "DONG Danping"
+image: mypic.jpg
+about:
+    template: jolla
+    image-shape: round
+    image-width: 15em
 ---
 
 Danping is currently the Senior Research Services Librarian at Singapore Management University supporting scholarly communications, Research Data Management and institutional repositories. Recently her area of interest has been expanded into research tools, data analysis and computational research methods. 
