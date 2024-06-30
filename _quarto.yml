@@ -1,0 +1,23 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Dong Danping's Page"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+      - currentwork.qmd
+      - cv.qmd
+      
+
+format:
+  html:
+    theme: spacelab
+    css: styles.css
+    toc: true
+
+
+
