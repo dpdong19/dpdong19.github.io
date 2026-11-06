@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>It's All About Context</title>
+<meta name="description" content="An interactive companion to Research Radar, AI Foundations Part 1: see what actually gets sent when you press Send.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<style>
+/* Layout: one stage. The chat starts alone; on Send it slides aside and the sheet of what was actually sent unfolds beside it. */
+:root {
+  --bg: #E7EBEF;
+  --card: #FFFFFF;
+  --paper: #FDFDFB;
+  --ink: #15202B;
+  --muted: #5A6573;
+  --rule: #CFD6DE;
+  --accent: #2547C4;
+  --accent-ink: #FFFFFF;
+  --hl: rgba(255, 208, 0, .45);
+  --k-sys: #5B6878;
+  --k-mem: #7A35D6;
+  --k-proj: #B35A06;
+  --k-ins: #0B7A6C;
+  --k-chat: #3A6EA5;
+  --k-new: #2547C4;
+  --k-gap: #B42318;
+  --tint: 8%;
+
+  --f-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1319; --card: #171E27; --paper: #1B232D; --ink: #E6EBF0; --muted: #9AA5B2; --rule: #2C3643;
+    --accent: #8099FF; --accent-ink: #0E1319; --hl: rgba(255, 208, 0, .22);
+    --k-sys: #9AA8B9; --k-mem: #B794FF; --k-proj: #F2A355; --k-ins: #3FCFBC; --k-chat: #7FB0E6; --k-new: #8099FF; --k-gap: #FF8A7A; --tint: 13%;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1319; --card: #171E27; --paper: #1B232D; --ink: #E6EBF0; --muted: #9AA5B2; --rule: #2C3643;
+  --accent: #8099FF; --accent-ink: #0E1319; --hl: rgba(255, 208, 0, .22);
+  --k-sys: #9AA8B9; --k-mem: #B794FF; --k-proj: #F2A355; --k-ins: #3FCFBC; --k-chat: #7FB0E6; --k-new: #8099FF; --k-gap: #FF8A7A; --tint: 13%;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 1rem; line-height: 1.55; }
+h1, h2 { font-family: var(--f-display); margin: 0; line-height: 1.1; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1120px; margin: 0 auto; padding-block: 36px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px;
+}
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.eyebrow { font-family: var(--f-mono); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.dots { display: flex; gap: 6px; align-items: center; }
+.dots i { width: 22px; height: 4px; background: var(--rule); border-radius: 2px; }
+.dots i.on { background: var(--accent); }
+
+/* Caption */
+.cap { display: grid; gap: 12px; max-width: 760px; min-height: 6.5rem; align-content: start; }
+.cap h1 { font-size: clamp(1.9rem, 4.4vw, 2.9rem); font-weight: 750; letter-spacing: -.02em; }
+.cap h1 .n { background: linear-gradient(transparent 58%, var(--hl) 58%); padding: 0 2px; }
+.cap .line { font-size: 1.1rem; color: var(--muted); }
+.term { justify-self: start; padding: 10px 16px; background: var(--card); border: 1.5px solid var(--ink); font-family: var(--f-display); font-size: 1.25rem; font-weight: 650; animation: rise .5s ease both; }
+.term span { background: linear-gradient(transparent 58%, var(--hl) 58%); }
+
+/* Stage */
+.stage { display: grid; grid-template-columns: minmax(0, 540px); justify-content: center; gap: 24px; align-items: start; }
+.stage.split { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); justify-content: stretch; }
+
+/* Chat */
+.chat { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; display: grid; box-shadow: 0 12px 32px -22px rgba(0,0,0,.4); }
+.chat-bar { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-bottom: 1px solid var(--rule); font-size: .82rem; color: var(--muted); }
+.chat-bar .av { width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 18%, var(--card)); display: grid; place-items: center; font-family: var(--f-mono); font-size: .68rem; color: var(--accent); }
+.log { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.b { max-width: 88%; padding: 9px 13px; border-radius: 15px; font-size: .95rem; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.b.user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
+.b.ai { align-self: flex-start; background: color-mix(in srgb, var(--ink) 5%, var(--card)); border-bottom-left-radius: 4px; }
+.b.new { animation: rise .35s ease both; }
+.typing { align-self: flex-start; display: flex; gap: 4px; padding: 12px 14px; background: color-mix(in srgb, var(--ink) 5%, var(--card)); border-radius: 15px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+.composer { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--rule); }
+.composer .field { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); font-size: .95rem; }
+.composer .field.empty { color: var(--muted); }
+.send { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 9px 16px; border-radius: 12px; cursor: pointer; }
+.send.nudge { animation: nudge 1.8s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 50% { box-shadow: 0 0 0 7px transparent; } }
+.send:disabled { opacity: .4; cursor: default; animation: none; }
+
+/* Highlights in the reply */
+.src { border: 0; padding: 0 2px; margin: 0 -1px; background: color-mix(in srgb, var(--k) 16%, transparent); border-bottom: 2px solid var(--k); cursor: pointer; border-radius: 2px; font: inherit; line-height: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.src:hover, .src.on { background: color-mix(in srgb, var(--k) 34%, transparent); }
+.from { align-self: flex-start; font-family: var(--f-mono); font-size: .76rem; color: var(--k); padding: 2px 9px; border: 1px solid color-mix(in srgb, var(--k) 50%, transparent); border-radius: 999px; animation: rise .2s ease both; }
+
+/* The sheet */
+.sheet-wrap { display: grid; gap: 8px; animation: rise .45s ease both; }
+.sheet-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sheet-label h2 { font-size: 1.1rem; }
+.count { font-family: var(--f-mono); font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.count b { color: var(--ink); font-weight: 500; font-size: 1.05rem; }
+.sheet { position: relative; background: var(--paper); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 8px; align-content: start;
+  box-shadow: 0 1px 0 var(--rule), 0 3px 0 -1px var(--paper), 0 4px 0 -1px var(--rule), 0 16px 34px -24px rgba(0,0,0,.45); }
+.blocks { display: grid; gap: 8px; }
+.blk { padding: 7px 11px 9px; background: color-mix(in srgb, var(--k) var(--tint), var(--paper)); border-top: 2px solid var(--k); animation: drop .45s cubic-bezier(.2,.8,.3,1.1) both; }
+@keyframes drop { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.blk-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.blk-h .nm { font-weight: 700; font-size: .84rem; color: var(--k); }
+.blk-h .tag { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); }
+.blk-b { font-size: .88rem; line-height: 1.5; }
+.blk-b .more { font-family: var(--f-mono); font-size: .74rem; color: var(--muted); }
+.turn { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 6px; }
+.turn .who { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); padding-top: 2px; }
+.k-sys { --k: var(--k-sys); } .k-mem { --k: var(--k-mem); } .k-proj { --k: var(--k-proj); } .k-ins { --k: var(--k-ins); } .k-chat { --k: var(--k-chat); } .k-new { --k: var(--k-new); }
+[data-ref] { border-radius: 2px; transition: background .2s, box-shadow .2s; }
+[data-ref].lit { background: var(--hl); box-shadow: 0 0 0 2px var(--hl); }
+.blk.lit-blk { outline: 2px solid var(--k); outline-offset: 2px; }
+
+.answer { border-top: 1.5px dashed var(--rule); padding-top: 8px; display: grid; gap: 2px; }
+.answer .tag { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); }
+.answer .tx { font-size: .88rem; white-space: pre-line; }
+.cursor { display: inline-block; width: .55em; height: 1.05em; background: var(--accent); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+.sweep { position: absolute; left: 0; right: 0; top: 0; height: 70px; pointer-events: none; opacity: 0;
+  background: linear-gradient(to bottom, transparent, var(--hl) 45%, var(--hl) 55%, transparent); }
+
+/* Memory switch */
+.mem-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; animation: rise .4s ease both; }
+.seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--card); border: 1.5px solid var(--ink); border-radius: 999px; }
+.seg button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; cursor: pointer; font-weight: 700; color: var(--muted); }
+.seg button[aria-checked="true"] { background: var(--ink); color: var(--card); }
+.seg button:disabled { cursor: progress; }
+.mem-row .say { color: var(--muted); }
+.blk.ghost { background: transparent; border: 1.5px dashed var(--rule); border-top-width: 1.5px; }
+.blk.ghost .nm { color: var(--muted); }
+.blk.ghost .blk-b { color: var(--muted); font-style: italic; }
+.blk.still { animation: none; }
+.k-gap { --k: var(--k-gap); }
+.src.k-gap { background: transparent; border: 1.5px dashed var(--k); border-radius: 4px; padding: 0 4px; }
+.b.swap { animation: rise .35s ease both; }
+
+.foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; }
+.again { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 820px) { .stage.split { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 460px) { .turn { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <p class="eyebrow">Research Radar · It's all about context</p>
+  </div>
+
+  <section class="cap" id="cap" aria-live="polite"></section>
+
+  <main class="stage" id="stage">
+    <div class="chat">
+      <div class="chat-bar"><span class="av">AI</span><span id="chatName">Project · Annual report</span></div>
+      <div class="log" id="log"></div>
+      <div class="composer">
+        <div class="field" id="field"></div>
+        <button class="send nudge" id="send">Send</button>
+      </div>
+    </div>
+    <div class="sheet-wrap" id="sheetWrap" hidden>
+      <div class="sheet-label"><h2>What the app actually sent</h2><span class="count" id="count"></span></div>
+      <div class="sheet" id="sheet">
+        <div class="blocks" id="blocks"></div>
+        <div class="answer" id="answer" hidden><span class="tag">&lt;assistant&gt;</span><p class="tx" id="answerTx"></p></div>
+        <div class="sweep" id="sweep"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="foot"><span>Example only. Real apps package this differently, but the idea is the same.</span><button class="again" id="again" hidden>Start again</button></div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sleep = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
+const $ = id => document.getElementById(id);
+const words = s => (s.replace(/<[^>]+>/g, " ").match(/\S+/g) || []).length;
+const fmt = n => n.toLocaleString("en-US");
+
+/* ---------- What gets sent ---------- */
+const BLOCKS = [
+  { k: "sys", name: "App rules", tag: "<system>", extra: 900,
+    html: `You are a helpful assistant. <span data-ref="date">Today is Tuesday 3 November 2026.</span> <span class="more">[+ about 900 more words]</span>` },
+  { k: "mem", name: "Memory", tag: "<memory>",
+    html: `<span data-ref="name">User's name is Alex.</span> <span data-ref="manager">Alex's manager is Sarah.</span> <span data-ref="tone">Alex keeps emails to Sarah friendly and brief.</span>` },
+  { k: "proj", name: "Project", tag: "<project>",
+    html: `<span data-ref="report">Writing the 2026 annual report,</span> <span data-ref="due">due to Sarah this Friday.</span> <span data-ref="data">Survey data comes from the Insights team.</span>` },
+  { k: "ins", name: "Your instructions", tag: "<instructions>",
+    html: `<span data-ref="spell">Use British spelling.</span> Keep emails under 100 words.` }
+];
+const HISTORY = [
+  ["user", "The survey data came in late, so I can't finish by Friday."],
+  ["ai", "That's a fair reason to ask for more time. When could you finish?"],
+  ["user", "Probably next Wednesday."],
+  ["ai", "That sounds realistic."]
+];
+const MESSAGE = "Can you draft the email?";
+const REPLY = [
+  ["Hi Sarah,", "manager"], "\n\n",
+  "The survey data from ", ["the Insights team", "data"], " arrived late, so ",
+  ["the annual report", "report"], " won't be ready ", ["by Friday", "due"], ". Could I send it to you on ",
+  ["Wednesday 11 November", "date"], " instead? I'll share the ", ["finalised", "spell"], " sections on Friday.\n\n",
+  "Thanks,\n", ["Alex", "name"]
+];
+const REPLY_OFF = [
+  "Subject: Request for Deadline Extension\n\n",
+  "Dear ", ["[Manager's name]", "gap"], ",\n\n",
+  "I hope this email finds you well. I am writing to request a short extension on ", ["[project name]", "gap"],
+  ". Unfortunately, the data I needed arrived later than expected, which has impacted my timeline.\n\n",
+  "Would it be possible to extend the deadline to next Wednesday? I apologize for any inconvenience this may cause and truly appreciate your understanding.\n\n",
+  "Best regards,\n", ["[Your name]", "gap"]
+];
+const FROM = { sys: "App rules", mem: "Memory", proj: "Project", ins: "Your instructions", chat: "The chat", gap: "nowhere. It isn't in the context" };
+const REF_KIND = { date: "sys", name: "mem", manager: "mem", tone: "mem", report: "proj", due: "proj", data: "proj", spell: "ins", gap: "gap" };
+const ghost = b => ({ k: b.k, name: b.name, tag: "not sent", ghost: true, html: "Empty." });
+
+/* ---------- Captions ---------- */
+function caption(phase) {
+  const c = $("cap");
+  const n = words(MESSAGE);
+  if (phase === "ready") c.innerHTML = `<h1>What did you just send?</h1><p class="line">Press Send.</p>`;
+  if (phase === "busy") c.innerHTML = `<h1>You typed <span class="n">${n} words</span>.</h1><p class="line">Here's what the app actually sent.</p>`;
+  if (phase === "done") {
+    c.innerHTML = `<h1>You typed <span class="n">${n} words</span>. The app sent <span class="n">${fmt(S.sent)}</span>.</h1>
+    <p class="line">Tap the highlights in the reply. Then try a generic assistant.</p>
+    <div class="term">All of this is the <span>context</span>.</div>
+    <div class="mem-row"><div class="seg" role="radiogroup" aria-label="Assistant">
+      <button role="radio" aria-checked="${S.mem}" data-know="1">Knows you</button>
+      <button role="radio" aria-checked="${!S.mem}" data-know="0">Generic assistant</button></div>
+    ${S.mem ? "" : `<span class="say">Same message. Nothing about you in the context.</span>`}</div>`;
+    $("cap").querySelectorAll("[data-know]").forEach(b => b.onclick = () => { if ((b.dataset.know === "1") !== S.mem) toggleMemory(); });
+  }
+}
+
+/* ---------- Chat ---------- */
+function bubble(role, content, isNew) {
+  const d = document.createElement("div");
+  d.className = `b ${role}${isNew ? " new" : ""}`;
+  if (typeof content === "string") d.textContent = content; else d.append(content);
+  $("log").append(d);
+  return d;
+}
+function annotated(parts) {
+  const frag = document.createDocumentFragment();
+  for (const p of parts) {
+    if (typeof p === "string") { frag.append(p); continue; }
+    const b = document.createElement("button");
+    b.className = `src k-${REF_KIND[p[1]]}`;
+    b.dataset.ref = p[1];
+    b.textContent = p[0];
+    frag.append(b);
+  }
+  return frag;
+}
+const plain = parts => parts.map(p => typeof p === "string" ? p : p[0]).join("");
+
+/* ---------- Sheet ---------- */
+function blockEl(b) {
+  const el = document.createElement("section");
+  el.className = `blk k-${b.k}${b.ghost ? " ghost" : ""}`;
+  el.innerHTML = `<div class="blk-h"><span class="nm">${b.name}</span><span class="tag">${b.tag.replace(/</g, "&lt;")}</span></div><div class="blk-b">${b.html}</div>`;
+  return el;
+}
+const chatBlock = () => ({ k: "chat", name: "The chat so far", tag: "<conversation>",
+  html: HISTORY.map(([r, t]) => `<div class="turn"><span class="who">${r === "user" ? "user" : "assistant"}</span><span>${t}</span></div>`).join("") });
+const newBlock = () => ({ k: "new", name: "Your message", tag: "<user>", html: MESSAGE });
+
+function setCount(n) { $("count").innerHTML = `<b>${fmt(n)}</b> words`; }
+async function tweenCount(from, to) {
+  const steps = RM ? 1 : 12;
+  for (let i = 1; i <= steps; i++) { setCount(Math.round(from + (to - from) * i / steps)); await sleep(22); }
+}
+async function sweep() {
+  if (RM) return;
+  const sw = $("sweep"), h = $("sheet").offsetHeight;
+  sw.style.opacity = 1;
+  await sw.animate([{ transform: "translateY(-70px)" }, { transform: `translateY(${h}px)` }], { duration: Math.min(2400, Math.max(1200, h * 2)), easing: "linear" }).finished;
+  sw.style.opacity = 0;
+}
+
+/* ---------- Send ---------- */
+const S = { phase: "ready", sent: 0, mem: true };
+const pack = () => [BLOCKS[0], ...BLOCKS.slice(1).map(b => S.mem ? b : ghost(b)), chatBlock(), newBlock()];
+const countOf = list => list.reduce((s, b) => s + (b.ghost ? 0 : words(b.html) + (b.extra || 0)), 0);
+
+/* Flip Memory: repack, reread, rewrite. */
+async function toggleMemory() {
+  if (S.phase !== "done") return;
+  S.phase = "busy"; S.mem = !S.mem;
+  clearLit();
+  caption("done"); $("cap").querySelectorAll("[data-know]").forEach(b => b.disabled = true);
+  const list = pack();
+  $("chatName").textContent = S.mem ? "Project · Annual report" : "New chat";
+  for (let i = 1; i <= 3; i++) {
+    $("blocks").children[i].replaceWith(blockEl(list[i]));
+    await sleep(140);
+  }
+  const before = S.sent;
+  S.sent = countOf(list);
+  await tweenCount(before, S.sent);
+  const bubbleEl = $("log").querySelector(".b.ai:last-child") || [...$("log").querySelectorAll(".b.ai")].pop();
+  const typing = document.createElement("div");
+  typing.className = "typing"; typing.innerHTML = "<i></i><i></i><i></i>";
+  bubbleEl.replaceWith(typing);
+  await sweep();
+  const parts = S.mem ? REPLY : REPLY_OFF;
+  $("answerTx").textContent = plain(parts);
+  const nb = document.createElement("div");
+  nb.className = "b ai swap"; nb.append(annotated(parts));
+  typing.replaceWith(nb);
+  S.phase = "done";
+  caption("done");
+  $("cap").querySelector(`[data-know="${S.mem ? 1 : 0}"]`).focus();
+}
+
+async function send() {
+  if (S.phase !== "ready") return;
+  S.phase = "busy";
+  $("send").disabled = true; $("send").classList.remove("nudge");
+  $("field").textContent = "Message the AI…"; $("field").classList.add("empty");
+  bubble("user", MESSAGE, true);
+  caption("busy");
+  await sleep(600);
+
+  $("stage").classList.add("split"); $("sheetWrap").hidden = false;
+  if (matchMedia("(max-width: 820px)").matches) $("sheetWrap").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+
+  let total = 0; setCount(0);
+  for (const b of pack()) {
+    $("blocks").append(blockEl(b));
+    const w = b.ghost ? 0 : words(b.html) + (b.extra || 0);
+    await tweenCount(total, total + w);
+    total += w;
+    await sleep(320);
+  }
+  S.sent = total;
+
+  await sweep();
+
+  const tx = $("answerTx"); $("answer").hidden = false;
+  const typing = document.createElement("div");
+  typing.className = "typing"; typing.innerHTML = "<i></i><i></i><i></i>";
+  $("log").append(typing);
+  const full = plain(REPLY);
+  let out = "";
+  for (const t of full.split(/(\s+)/)) {
+    out += t;
+    tx.innerHTML = out.replace(/&/g, "&amp;").replace(/</g, "&lt;") + `<span class="cursor"></span>`;
+    if (t.trim()) await sleep(26);
+  }
+  tx.textContent = full;
+  typing.remove();
+  bubble("ai", annotated(REPLY), true);
+
+  S.phase = "done";
+  caption("done");
+  $("again").hidden = false;
+}
+
+/* ---------- Tracing ---------- */
+function clearLit() {
+  document.querySelectorAll(".lit, .lit-blk, .src.on").forEach(e => e.classList.remove("lit", "lit-blk", "on"));
+  document.querySelectorAll(".from").forEach(e => e.remove());
+}
+function trace(btn) {
+  const ref = btn.dataset.ref, k = REF_KIND[ref];
+  clearLit();
+  btn.classList.add("on");
+  const chip = document.createElement("span");
+  chip.className = `from k-${k}`;
+  chip.textContent = `↳ from ${FROM[k]}`;
+  btn.closest(".b").after(chip);
+  const target = k === "gap" ? null : $("blocks").querySelector(`[data-ref="${ref}"]`);
+  if (target) {
+    target.classList.add("lit");
+    target.closest(".blk").classList.add("lit-blk");
+    target.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "nearest" });
+  }
+}
+
+/* ---------- Start ---------- */
+function reset() {
+  S.phase = "ready"; S.sent = 0; S.mem = true; $("chatName").textContent = "Project · Annual report";
+  $("log").innerHTML = "";
+  HISTORY.forEach(([r, t]) => bubble(r, t));
+  $("blocks").innerHTML = ""; $("answer").hidden = true; $("answerTx").textContent = "";
+  $("sheetWrap").hidden = true; $("stage").classList.remove("split"); $("again").hidden = true;
+  $("field").textContent = MESSAGE; $("field").classList.remove("empty");
+  $("send").disabled = false; $("send").classList.add("nudge");
+  caption("ready");
+  window.scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" });
+}
+
+$("send").addEventListener("click", send);
+$("again").addEventListener("click", reset);
+$("log").addEventListener("click", e => { const b = e.target.closest(".src"); if (b && S.phase === "done") trace(b); });
+reset();
+})();
+</script>
+
+</body>
+</html>

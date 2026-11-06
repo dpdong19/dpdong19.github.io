@@ -1,6 +1,8 @@
 project:
   type: website
   output-dir: docs
+  resources:
+    - its-all-about-context/
 
 website:
   title: "Danping's Page"
